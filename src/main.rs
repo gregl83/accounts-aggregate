@@ -26,7 +26,8 @@ fn main() {
 
     // todo - custom errors in domain model
 
-    // todo - replace in-memory projection with disk-backed solution for scale... or get moar mems
+    // todo - replace in-memory projection with disk-backed solution for scale... or get moar memories
+    // todo - sled(beta) embedded vs external db
     let mut accounts: HashMap<u16, Account> = HashMap::new();
 
     // read source file while handling aggregate commands / transactions

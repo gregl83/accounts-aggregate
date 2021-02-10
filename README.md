@@ -44,6 +44,12 @@ State of `Accounts` after processing commands.
 
 Test data can be generated using the [generator](./generator) subpackage.
 
+Account model command business rules have test coverage.
+
+```bash
+cargo test
+```
+
 ## License
 
 [MIT](LICENSE)

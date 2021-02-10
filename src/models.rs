@@ -228,7 +228,32 @@ mod tests {
     }
 
     #[test]
-    fn deposit_declined_duplicate() {
+    fn deposit_when_locked_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 0);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(0, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 0);
+    }
+
+    #[test]
+    fn deposit_duplicate_declined() {
         let client = 1;
         let tx = 10;
 
@@ -239,14 +264,8 @@ mod tests {
             tx,
             amount: Some(Decimal::new(990000, 4))
         };
-        let events = account.handle(command).unwrap();
+        let events = account.handle(command.clone()).unwrap();
         account.apply(events);
-        let command = Command {
-            name: CommandType::Deposit,
-            client,
-            tx,
-            amount: Some(Decimal::new(990000, 4))
-        };
         let events = account.handle(command);
 
         assert!(events.is_err());
@@ -276,7 +295,7 @@ mod tests {
         let command = Command {
             name: CommandType::Withdraw,
             client,
-            tx,
+            tx: tx + 1,
             amount: Some(Decimal::new(980000, 4))
         };
         let events = account.handle(command).unwrap();
@@ -292,7 +311,40 @@ mod tests {
     }
 
     #[test]
-    fn withdraw_declined_insufficient_balance() {
+    fn withdraw_when_locked_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Withdraw,
+            client,
+            tx: tx + 1,
+            amount: Some(Decimal::new(400000, 4))
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 1);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 1);
+    }
+
+    #[test]
+    fn withdraw_duplicate_declined() {
         let client = 1;
         let tx = 10;
 
@@ -308,8 +360,494 @@ mod tests {
         let command = Command {
             name: CommandType::Withdraw,
             client,
+            tx: tx + 1,
+            amount: Some(Decimal::new(400000, 4))
+        };
+        let events = account.handle(command.clone()).unwrap();
+        account.apply(events);
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(590000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(590000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn withdraw_when_balance_insufficient_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
             tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Withdraw,
+            client,
+            tx: tx + 1,
             amount: Some(Decimal::new(1000000, 4))
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 1);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 1);
+    }
+
+    #[test]
+    fn dispute_accepted() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(990000, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn dispute_when_locked_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 1);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 1);
+    }
+
+    #[test]
+    fn dispute_missing_transaction_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx: tx + 1,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 1);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 1);
+    }
+
+    #[test]
+    fn resolve_for_dispute_accepted() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+
+        assert_eq!(account.version, 3);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 3);
+    }
+
+    #[test]
+    fn resolve_for_dispute_duplicate_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 3);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 3);
+    }
+
+    #[test]
+    fn resolve_for_dispute_when_locked_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(990000, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn resolve_for_dispute_when_missing_transaction_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx: tx + 1,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(990000, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn resolve_when_dispute_missing_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Resolve,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 1);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(990000, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(!account.locked);
+        assert_eq!(account.events.len(), 1);
+    }
+
+    #[test]
+    fn chargeback_for_dispute_accepted() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Chargeback,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+
+        assert_eq!(account.version, 4);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(0, 4));
+        assert_eq!(account.total, Decimal::new(0, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 4);
+    }
+
+    #[test]
+    fn chargeback_for_dispute_when_locked_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Chargeback,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(990000, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn chargeback_for_dispute_when_missing_transaction_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Dispute,
+            client,
+            tx,
+            amount: None
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        account.locked = true;
+        let command = Command {
+            name: CommandType::Chargeback,
+            client,
+            tx: tx + 1,
+            amount: None
+        };
+        let events = account.handle(command);
+
+        assert!(events.is_err());
+        assert_eq!(account.version, 2);
+        assert_eq!(account.client, client);
+        assert_eq!(account.available, Decimal::new(0, 4));
+        assert_eq!(account.held, Decimal::new(990000, 4));
+        assert_eq!(account.total, Decimal::new(990000, 4));
+        assert!(account.locked);
+        assert_eq!(account.events.len(), 2);
+    }
+
+    #[test]
+    fn chargeback_when_dispute_missing_declined() {
+        let client = 1;
+        let tx = 10;
+
+        let mut account = Account::new(client);
+        let command = Command {
+            name: CommandType::Deposit,
+            client,
+            tx,
+            amount: Some(Decimal::new(990000, 4))
+        };
+        let events = account.handle(command).unwrap();
+        account.apply(events);
+        let command = Command {
+            name: CommandType::Chargeback,
+            client,
+            tx,
+            amount: None
         };
         let events = account.handle(command);
 
