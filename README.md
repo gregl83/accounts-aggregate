@@ -30,8 +30,18 @@ State of `Accounts` after processing commands.
 
 ## Usage
 
+### Data Generator 
+
 ```bash
-accounts-aggregate <source-filepath>
+cargo-run --bin generate -- --clients <num> --transactions <num> 
+```
+
+Caution: Will generate maximum possible values of ClientId(u16) and TransactionId(u32) if not provided!
+
+### Aggregator
+
+```bash
+cargo-run -- <source-filepath>
 ```
 
 ## License

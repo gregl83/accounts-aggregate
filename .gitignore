@@ -2,3 +2,6 @@
 
 # jetbrains
 .idea
+
+# data generated
+*.csv
