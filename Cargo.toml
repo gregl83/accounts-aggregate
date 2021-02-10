@@ -12,3 +12,7 @@ clap = "2.33.3"
 rust_decimal = { version = "1.10.2", features = ["serde-str"] }
 serde = { version = "1.0.123", features = ["derive"] }
 csv = "1.1.5"
+
+[[bin]]
+name = "generate"
+path = "src/bin/generate.rs"
