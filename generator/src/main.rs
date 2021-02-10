@@ -96,9 +96,9 @@ fn main() {
     let remaining_transactions = (total_transactions - transactions_written) as f64;
     let mut deposits = (remaining_transactions * 0.4) as u32;
     let mut withdrawals = (remaining_transactions * 0.4) as u32;
-    let mut disputes = (remaining_transactions * 0.1) as u32;
-    let mut resolves = (remaining_transactions * 0.05) as u32;
-    let mut chargebacks = (remaining_transactions * 0.05) as u32;
+    let mut disputes = (remaining_transactions * 0.15) as u32;
+    let mut resolves = (remaining_transactions * 0.025) as u32;
+    let mut chargebacks = (remaining_transactions * 0.025) as u32;
 
     writer.flush().unwrap();
     log::debug!("Generating {} deposits", deposits);
