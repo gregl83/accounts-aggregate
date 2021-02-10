@@ -18,8 +18,6 @@ use std::collections::HashMap;
 
 use clap::{Arg, App};
 use csv::{Reader, Writer};
-use serde::{Serialize, Deserialize};
-use rust_decimal::Decimal;
 
 use models::{Command, Account};
 
