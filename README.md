@@ -13,7 +13,7 @@ Processing account transactions basing bits off:
 ### Data Generator 
 
 ```bash
-cargo-run -- <source-filepath>
+cargo run -- <source-filepath>
 ```
 
 ## Domain Vocabulary
