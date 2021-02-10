@@ -7,3 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+simple-error = "0.2.3"
+clap = "2.33.3"
+rust_decimal = { version = "1.10.2", features = ["serde-str"] }
+serde = { version = "1.0.123", features = ["derive"] }
+csv = "1.1.5"
