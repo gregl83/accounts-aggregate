@@ -132,10 +132,22 @@ impl Account {
 
         let events = match command.name {
             CommandType::Deposit => {
-                vec![Event::Credited {tx: command.tx, amount: command.amount.unwrap()}]
+                let amount = command.amount;
+                if amount.is_none() {
+                    bail!("amount is none for deposit account({}) transaction({})", command.client, command.tx);
+                }
+                vec![Event::Credited {tx: command.tx, amount: amount.unwrap()}]
             }
             CommandType::Withdraw => {
-                vec![Event::Debited {tx: command.tx, amount: command.amount.unwrap()}]
+                let amount = command.amount;
+                if amount.is_none() {
+                    bail!("amount is none for withdraw account({}) transaction({})", command.client, command.tx);
+                }
+                let amount_value = amount.unwrap();
+                if amount_value > self.available {
+                    bail!("amount({}) exceeds available({}) withdraw account({}) transaction({})", amount_value, self.available, command.client, command.tx);
+                }
+                vec![Event::Debited {tx: command.tx, amount: amount_value}]
             }
             CommandType::Dispute => {
                 let amount = self.find_genesis_amount(command.tx);

@@ -16,6 +16,12 @@ Processing account transactions basing bits off:
 cargo run -- <source-filepath>
 ```
 
+## Docs
+
+```bash
+cargo doc --open
+```
+
 ## Domain Vocabulary
 
 #### Aggregate
