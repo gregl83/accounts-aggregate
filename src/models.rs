@@ -10,7 +10,7 @@ type Version = u32;
 type ClientId = u16;
 /// Transaction Id representing initial command to aggregate (Withdrawal or Deposit).
 type TransactionId = u32;
-/// Current using Decimal package to avoid floatation arithmetic.
+/// Current using Decimal package to avoid float arithmetic issues. (91 bits)
 type Currency = Decimal;
 
 /// An action to perform for a given `Account` aggregate.
