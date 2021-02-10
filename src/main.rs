@@ -32,6 +32,7 @@ fn main() {
     // read source file while handling aggregate commands / transactions
     let file = File::open(source).unwrap();
     let mut reader = Reader::from_reader(file);
+    // fixme - error handling / logging for failed transactions
     for result in reader.deserialize() {
         let record: Command = result.unwrap();
         let client = record.client.clone();
@@ -39,20 +40,17 @@ fn main() {
             if let Ok(events) = account.handle(record) {
                 account.apply(events);
             }
-            // fixme - handle error?
         } else {
             let mut account = Account::new(client);
             if let Ok(events) = account.handle(record) {
                 account.apply(events);
                 accounts.insert(client, account);
             }
-            // fixme - handle error?
         }
     }
 
     // write aggregates to stdout
     let mut writer = Writer::from_writer(io::stdout());
-    writer.serialize(&["client","available","held","total"]).unwrap();
     for (_, account) in accounts {
         writer.serialize(account).unwrap();
     }

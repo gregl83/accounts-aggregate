@@ -44,7 +44,6 @@ pub struct Account {
     available: Currency,
     held: Currency,
     total: Currency,
-    #[serde(skip_serializing)]
     locked: bool,
     #[serde(skip_serializing)]
     events: Vec<Event>
@@ -64,6 +63,7 @@ impl Account {
     }
 
     fn find_genesis_amount(&self, key: TransactionId) -> Option<Currency> {
+        println!("{:?}", self.events);
         let mut transaction_amount: Option<Currency> = None;
         for event in &self.events {
             if let Event::Credited { tx, amount } = event {
@@ -168,7 +168,7 @@ impl Account {
                 if amount.is_none() {
                     bail!("unable to find disputed account({}) transaction({}) to chargeback", command.client, command.tx);
                 }
-                vec![Event::Reversed {tx: command.tx, amount: amount.unwrap()}]
+                vec![Event::Reversed {tx: command.tx, amount: amount.unwrap()}, Event::Locked]
             }
         };
 

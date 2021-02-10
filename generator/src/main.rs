@@ -94,11 +94,11 @@ fn main() {
 
     // fixme - logic too clean / predictable
     let remaining_transactions = (total_transactions - transactions_written) as f64;
-    let mut deposits = (remaining_transactions * 0.45) as u32;
-    let mut withdrawals = (remaining_transactions * 0.45) as u32;
-    let mut disputes = (remaining_transactions * 0.05) as u32;
-    let mut resolves = (remaining_transactions * 0.025) as u32;
-    let mut chargebacks = (remaining_transactions * 0.025) as u32;
+    let mut deposits = (remaining_transactions * 0.4) as u32;
+    let mut withdrawals = (remaining_transactions * 0.4) as u32;
+    let mut disputes = (remaining_transactions * 0.1) as u32;
+    let mut resolves = (remaining_transactions * 0.05) as u32;
+    let mut chargebacks = (remaining_transactions * 0.05) as u32;
 
     writer.flush().unwrap();
     log::debug!("Generating {} deposits", deposits);
@@ -135,7 +135,7 @@ fn main() {
             rounded_total -= 1;
         }
         if rounded_total > 0 && disputes > 0 {
-            let dispute_id = transactions_written - 2;
+            let dispute_id = transactions_written - 1;
             writer.serialize(Transaction {
                 command: "dispute",
                 client,
