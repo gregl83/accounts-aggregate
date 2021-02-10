@@ -8,26 +8,6 @@ Processing account transactions basing bits off:
 - [CQRS](https://martinfowler.com/bliki/CQRS.html)
 - [Domain Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html)
 
-## Domain Vocabulary
-
-### Aggregate
-
-`Accounts` constructed from an immutable Event Stream. Executing commands on aggregate results in new events.
-
-Responsible for domain business rules.
-
-### Commands
-
-Transactions to be performed on aggregate.
-
-### Event Stream
-
-Ordered collection of immutable events emitted from commands on aggregates.  
-
-### Projection
-
-State of `Accounts` after processing commands.
-
 ## Usage
 
 ### Data Generator 
@@ -36,13 +16,35 @@ State of `Accounts` after processing commands.
 cargo-run --bin generate -- --clients <num> --transactions <num> 
 ```
 
-Caution: Will generate maximum possible values of ClientId(u16) and TransactionId(u32) if not provided!
+*Caution: Generates upper bounds of ClientId(u16) and TransactionId(u32) if NOT provided!*
 
 ### Aggregator
 
 ```bash
 cargo-run -- <source-filepath>
 ```
+
+## Domain
+
+### Vocabulary
+
+#### Aggregate
+
+`Accounts` constructed from an immutable Event Stream. Executing commands on aggregate results in new events.
+
+Responsible for domain business rules.
+
+#### Commands
+
+Transactions to be performed on aggregate.
+
+#### Event Stream
+
+Ordered collection of immutable events emitted from commands on aggregates.  
+
+#### Projection
+
+State of `Accounts` after processing commands.
 
 ## License
 
