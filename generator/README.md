@@ -8,7 +8,9 @@ Accounts data generator
 cargo run -- --clients <num> --transactions <num> 
 ```
 
-**Caution:** Generates upper bounds of ClientId(u16) and TransactionId(u32) if NOT provided!
+**Caution:**
+
+Generates upper bounds of ClientId(u16) and TransactionId(u32) if NOT provided!
 
 ## License
 
