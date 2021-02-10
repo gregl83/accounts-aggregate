@@ -8,9 +8,7 @@ Processing account transactions basing bits off:
 - [CQRS](https://martinfowler.com/bliki/CQRS.html)
 - [Domain Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html)
 
-## Usage
-
-### Data Generator 
+## Usage 
 
 ```bash
 cargo run -- <source-filepath>
