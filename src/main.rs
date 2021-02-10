@@ -1,3 +1,10 @@
+//! Example Accounts Aggregate toolset.
+//!
+//! For help:
+//! ```bash
+//! cargo run -- -h
+//! ```
+
 mod models;
 
 use std::io;
@@ -37,11 +44,13 @@ fn main() {
     for result in reader.deserialize() {
         let record: Command = result.unwrap();
         let client = record.client.clone();
+        // check for existing account
         if let Some(account) = accounts.get_mut(&client) {
             if let Ok(events) = account.handle(record) {
                 account.apply(events);
             }
         } else {
+            // account is new, genesis time
             let mut account = Account::new(client);
             if let Ok(events) = account.handle(record) {
                 account.apply(events);

@@ -7,6 +7,12 @@ type ClientId = u16;
 type TransactionId = u32;
 type Currency = Decimal;
 
+/// An action to perform for a given `Account` aggregate.
+///
+/// `Commands` are decoupled from query responsibilities.
+/// Every command results in _at least_ one event.
+///
+/// (See [CQRS](https://martinfowler.com/bliki/CQRS.html)).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Command {
     #[serde(rename = "type")]
@@ -16,6 +22,7 @@ pub struct Command {
     amount: Option<Currency>
 }
 
+/// Type of `Commands` that can be handled by the `Account` aggregate.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum CommandType {
@@ -26,6 +33,9 @@ pub enum CommandType {
     Chargeback,
 }
 
+/// Events that can occur from the `Account` aggregate.
+///
+/// When a change happens to an `Account` those effects are propagated outward using events.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Event {
     Credited { tx: TransactionId, amount: Currency },
@@ -36,6 +46,9 @@ pub enum Event {
     Locked,
 }
 
+/// Aggregate that summarizes all `client` transactions.
+///
+/// Equivalent of a bank account.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     #[serde(skip_serializing)]
@@ -50,6 +63,7 @@ pub struct Account {
 }
 
 impl Account {
+    /// Returns new `Account` with `client` id set and defaults.
     pub fn new(client: ClientId) -> Self {
         Account {
             version: 0,
@@ -66,6 +80,7 @@ impl Account {
         self.events.iter().any(|e| { e == event })
     }
 
+    /// Returns `amount` for first transaction event (ordered) matching key to transaction id(`tx`).
     fn find_genesis_amount(&self, key: TransactionId) -> Option<Currency> {
         let mut transaction_amount: Option<Currency> = None;
         for event in &self.events {
@@ -85,6 +100,10 @@ impl Account {
         transaction_amount
     }
 
+    /// Returns `amount` for first transaction event of type `Held` (ordered)
+    /// matching key to transaction id(`tx`).
+    ///
+    /// `Event::Held` is emitted for `dispute` commands.
     fn find_dispute_amount(&self, key: TransactionId) -> Option<Currency> {
         let mut transaction_amount: Option<Currency> = None;
         for event in &self.events {
