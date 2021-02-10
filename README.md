@@ -1,4 +1,4 @@
-# acounts-aggregate
+# accounts-aggregate
 
 Minimal accounts aggregation example using Rust
 
@@ -13,20 +13,10 @@ Processing account transactions basing bits off:
 ### Data Generator 
 
 ```bash
-cargo-run --bin generate -- --clients <num> --transactions <num> 
-```
-
-*Caution: Generates upper bounds of ClientId(u16) and TransactionId(u32) if NOT provided!*
-
-### Aggregator
-
-```bash
 cargo-run -- <source-filepath>
 ```
 
-## Domain
-
-### Vocabulary
+## Domain Vocabulary
 
 #### Aggregate
 
@@ -45,6 +35,10 @@ Ordered collection of immutable events emitted from commands on aggregates.
 #### Projection
 
 State of `Accounts` after processing commands.
+
+## Testing
+
+Test data can be generated using the [generator](./generator) subpackage.
 
 ## License
 

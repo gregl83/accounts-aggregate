@@ -1,5 +1,5 @@
 [package]
-name = "accounts-aggregate"
+name = "generator"
 version = "0.1.0"
 authors = ["Gregory Langlais <general@gregorylanglais.com>"]
 edition = "2018"
@@ -7,9 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-simple-error = "0.2.3"
 simple_logger = "1.11.0"
 log = { version = "0.4.14", features = ["std"] }
+rand = "0.8.3"
 clap = "2.33.3"
 rust_decimal = { version = "1.10.2", features = ["serde-str"] }
 serde = { version = "1.0.123", features = ["derive"] }
