@@ -1,5 +1,10 @@
 //! Example Accounts Aggregate toolset.
 //!
+//! Included:
+//! - main executable controlling workflow of application
+//! - domain models used to build `Account` aggregate
+//! - data generator subpackage
+//!
 //! For help:
 //! ```bash
 //! cargo run -- -h
@@ -18,6 +23,16 @@ use rust_decimal::Decimal;
 
 use models::{Command, Account};
 
+/// Procedural execution of application workflow.
+///
+/// **Steps:**
+/// 1. Bootstrap clap cli argument parser.
+/// 2. Get file handle for data source.
+/// 3. Stream transaction records using csv + serde to deserialize models.
+/// 4. For each transaction record build aggregate and apply events to projection.
+/// 5. For each aggregate account serialize using csv + serde and write to stdout.
+///
+/// Desperately needs a logger w/log levels.
 fn main() {
     // bootstrap clap thus getting source filepath
     let arg_matches = App::new("account-aggregate")

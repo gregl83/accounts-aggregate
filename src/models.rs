@@ -1,10 +1,16 @@
+//! Domain models for event sourcing the `Account` aggregate.
+
 use simple_error::*;
 use rust_decimal::prelude::Decimal;
 use serde::{Serialize, Deserialize};
 
+/// Version used to determine events applied to `Account` aggregate. Increments with event stream.
 type Version = u32;
+/// Client Id which is equivalent to `Account` aggregate Id.
 type ClientId = u16;
+/// Transaction Id representing initial command to aggregate (Withdrawal or Deposit).
 type TransactionId = u32;
+/// Current using Decimal package to avoid floatation arithmetic.
 type Currency = Decimal;
 
 /// An action to perform for a given `Account` aggregate.
