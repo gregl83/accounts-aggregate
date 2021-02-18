@@ -24,7 +24,7 @@ With more time, this solution _should_ be refactored to use a disk-backed store 
 
 [sled](https://github.com/spacejam/sled) is an embedded disk-backed store that handles billions of transactions per minute. With `sled`, it would be possible to persist aggregates to disk, temporarily or permanently, freeing up memory to processing any volume of transactions.
 
-A solution like `sled`, with more testing, could work well for this use-case.
+A solution like `sled`, with more testing, could work well for *some* use-cases. With that said, direct from the `sled` README "if reliability is your primary constraint, use SQLite. sled is beta.".
 
 **Are there enough tests?**
 
