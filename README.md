@@ -1,6 +1,6 @@
 # accounts-aggregate
 
-Minimal accounts aggregation example using Rust
+Minima Accounts aggregation with Rust.
 
 Processing account transactions basing bits off:
 
