@@ -4,6 +4,8 @@ use simple_error::*;
 use rust_decimal::prelude::Decimal;
 use serde::{Serialize, Deserialize};
 
+use crate::events::{Cause};
+
 /// Version used to determine events applied to `Account` aggregate. Increments with event stream.
 type Version = u32;
 /// Client Id which is equivalent to `Account` aggregate Id.
@@ -28,15 +30,9 @@ pub struct Command {
     amount: Option<Currency>
 }
 
-/// Contributes to production of an Effect.
-pub trait Cause {
-    type Id;
-    fn entity_id(&self) -> Self::Id;
-}
-
 impl Cause for Command {
-    type Id = ClientId;
-    fn entity_id(&self) -> Self::Id { self.client }
+    type ActorId = ClientId;
+    fn actor_id(&self) -> Self::ActorId { self.client }
 }
 
 /// Type of `Commands` that can be handled by the `Account` aggregate.
@@ -48,14 +44,6 @@ pub enum CommandType {
     Dispute,
     Resolve,
     Chargeback,
-}
-
-/// Produced by Cause and effects state of an entity.
-pub trait Effect {
-    type Version;
-    type Key;
-    fn version(&self) -> Self::Version;
-    fn idempotency_key(&self) -> Self::Key;
 }
 
 /// Events that can occur from the `Account` aggregate.
