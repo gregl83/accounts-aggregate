@@ -19,7 +19,11 @@ use std::collections::HashMap;
 use clap::{Arg, App};
 use csv::{Reader, Writer};
 
-use models::{Command, Account};
+use models::{
+    Cause,
+    Command,
+    Account
+};
 
 /// Procedural execution of application workflow.
 ///
@@ -56,7 +60,7 @@ fn main() {
     // fixme - error handling / logging for failed transactions
     for result in reader.deserialize() {
         let record: Command = result.unwrap();
-        let client = record.client.clone();
+        let client = record.entity_id();
         // check for existing account
         if let Some(account) = accounts.get_mut(&client) {
             if let Ok(events) = account.handle(record) {
