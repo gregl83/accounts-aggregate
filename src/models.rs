@@ -4,7 +4,7 @@ use simple_error::*;
 use rust_decimal::prelude::Decimal;
 use serde::{Serialize, Deserialize};
 
-use crate::events::{Cause};
+use crate::events::{Actor, Cause, Effect};
 
 /// Version used to determine events applied to `Account` aggregate. Increments with event stream.
 type Version = u32;
@@ -57,6 +57,28 @@ pub enum Event {
     Released { tx: TransactionId, amount: Currency },
     Reversed { tx: TransactionId, amount: Currency },
     Locked,
+}
+
+impl Effect for Event {
+    type Version = Version;
+    type Key = TransactionId;
+    fn version(&self) -> Self::Version {
+        1 // fixme - cleaner approach
+    }
+    fn idempotency_key(&self) -> Self::Key {
+        match self {
+            Event::Locked => {
+                0 // fixme - generate idempotency key for everything
+            },
+            Event::Credited {tx, ..} |
+            Event::Debited {tx, ..} |
+            Event::Held {tx, ..} |
+            Event::Released {tx, ..} |
+            Event::Reversed {tx, ..} => {
+                *tx
+            }
+        }
+    }
 }
 
 /// Aggregate that summarizes all `client` transactions.
@@ -129,38 +151,12 @@ impl Account {
         }
         transaction_amount
     }
+}
 
-    pub fn apply(&mut self, events: Vec<Event>) {
-        for event in events {
-            match event {
-                Event::Credited { amount, .. } => {
-                    self.available += amount;
-                }
-                Event::Debited { amount, .. } => {
-                    self.available -= amount;
-                }
-                Event::Held { amount, .. } => {
-                    self.available -= amount;
-                    self.held += amount;
-                }
-                Event::Released { amount, .. } => {
-                    self.held -= amount;
-                    self.available += amount;
-                }
-                Event::Reversed { amount, .. } => {
-                    self.held -= amount;
-                }
-                Event::Locked => {
-                    self.locked = true;
-                }
-            };
-            self.total = self.available + self.held;
-            self.version += 1;
-            self.events.push(event);
-        }
-    }
+impl Actor<Command, Event> for Account {
+    type Id = ClientId;
 
-    pub fn handle(&self, command: Command) -> Result<Vec<Event>, SimpleError> {
+    fn handle(&self, command: Command) -> Result<Vec<Event>, SimpleError> {
         if self.locked {
             bail!("unable to process transaction({}) having locked account({})", command.tx, command.client);
         }
@@ -228,6 +224,36 @@ impl Account {
         };
 
         Ok(events)
+    }
+
+    fn apply(&mut self, events: Vec<Event>) {
+        for event in events {
+            match event {
+                Event::Credited { amount, .. } => {
+                    self.available += amount;
+                }
+                Event::Debited { amount, .. } => {
+                    self.available -= amount;
+                }
+                Event::Held { amount, .. } => {
+                    self.available -= amount;
+                    self.held += amount;
+                }
+                Event::Released { amount, .. } => {
+                    self.held -= amount;
+                    self.available += amount;
+                }
+                Event::Reversed { amount, .. } => {
+                    self.held -= amount;
+                }
+                Event::Locked => {
+                    self.locked = true;
+                }
+            };
+            self.total = self.available + self.held;
+            self.version += 1;
+            self.events.push(event);
+        }
     }
 }
 

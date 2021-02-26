@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use clap::{Arg, App};
 use csv::{Reader, Writer};
 
-use events::{Cause};
+use events::{Actor, Cause};
 use models::{Command, Account};
 
 /// Procedural execution of application workflow.
