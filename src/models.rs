@@ -167,7 +167,7 @@ impl Actor<Command, Event> for Account {
             bail!("unable to process transaction({}) having locked account({})", command.tx, command.client);
         }
 
-        let key = *Uuid::new_v4().as_bytes();
+        let namespace = Uuid::NAMESPACE_OID;
 
         let events = match command.name {
             CommandType::Deposit => {
@@ -177,8 +177,9 @@ impl Actor<Command, Event> for Account {
                 }
                 let event = Event::Credited {
                     version: 1,
-                    key,
-                    tx: command.tx, amount: amount.unwrap()
+                    key: *Uuid::new_v3(&namespace, &command.tx.to_le_bytes()).as_bytes(),
+                    tx: command.tx,
+                    amount: amount.unwrap()
                 };
                 if self.has_event(&event) {
                     bail!("duplicate deposit account({}) transaction({})", command.client, command.tx);
@@ -193,8 +194,9 @@ impl Actor<Command, Event> for Account {
                 let amount_value = amount.unwrap();
                 let event = Event::Debited {
                     version: 1,
-                    key,
-                    tx: command.tx, amount: amount_value
+                    key: *Uuid::new_v3(&namespace, &command.tx.to_le_bytes()).as_bytes(),
+                    tx: command.tx,
+                    amount: amount_value
                 };
                 if self.has_event(&event) {
                     bail!("duplicate withdraw account({}) transaction({})", command.client, command.tx);
@@ -211,8 +213,9 @@ impl Actor<Command, Event> for Account {
                 }
                 let event = Event::Held {
                     version: 1,
-                    key,
-                    tx: command.tx, amount: amount.unwrap()
+                    key: *Uuid::new_v3(&namespace, &command.tx.to_le_bytes()).as_bytes(),
+                    tx: command.tx,
+                    amount: amount.unwrap()
                 };
                 if self.has_event(&event) {
                     bail!("duplicate dispute account({}) transaction({})", command.client, command.tx);
@@ -226,8 +229,9 @@ impl Actor<Command, Event> for Account {
                 }
                 let event = Event::Released {
                     version: 1,
-                    key,
-                    tx: command.tx, amount: amount.unwrap()
+                    key: *Uuid::new_v3(&namespace, &command.tx.to_le_bytes()).as_bytes(),
+                    tx: command.tx,
+                    amount: amount.unwrap()
                 };
                 if self.has_event(&event) {
                     bail!("duplicate resolve account({}) transaction({})", command.client, command.tx);
@@ -241,8 +245,9 @@ impl Actor<Command, Event> for Account {
                 }
                 let event = Event::Reversed {
                     version: 1,
-                    key,
-                    tx: command.tx, amount: amount.unwrap()
+                    key: *Uuid::new_v3(&namespace, &command.tx.to_le_bytes()).as_bytes(),
+                    tx: command.tx,
+                    amount: amount.unwrap()
                 };
                 if self.has_event(&event) {
                     bail!("duplicate chargeback account({}) transaction({})", command.client, command.tx);
@@ -340,7 +345,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn deposit_duplicate_declined() {
         let client = 1;
         let tx = 10;
@@ -432,7 +436,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn withdraw_duplicate_declined() {
         let client = 1;
         let tx = 10;
@@ -636,7 +639,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn resolve_for_dispute_duplicate_declined() {
         let client = 1;
         let tx = 10;

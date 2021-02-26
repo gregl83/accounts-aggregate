@@ -14,4 +14,4 @@ clap = "2.33.3"
 rust_decimal = { version = "1.10.2", features = ["serde-str"] }
 serde = { version = "1.0.123", features = ["derive"] }
 csv = "1.1.5"
-uuid = { version = "0.8.2", features = ["serde", "v4"] }
+uuid = { version = "0.8.2", features = ["serde", "v3", "v4"] }
