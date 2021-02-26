@@ -54,18 +54,27 @@ pub enum CommandType {
 /// When a change happens to an `Account` those effects are propagated outward using events.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Event {
-    Credited { key: IdempotencyKey, tx: TransactionId, amount: Currency },
-    Debited { key: IdempotencyKey, tx: TransactionId, amount: Currency },
-    Held { key: IdempotencyKey, tx: TransactionId, amount: Currency },
-    Released { key: IdempotencyKey, tx: TransactionId, amount: Currency },
-    Reversed { key: IdempotencyKey, tx: TransactionId, amount: Currency },
-    Locked { key: IdempotencyKey },
+    Credited { version: Version, key: IdempotencyKey, tx: TransactionId, amount: Currency },
+    Debited { version: Version, key: IdempotencyKey, tx: TransactionId, amount: Currency },
+    Held { version: Version, key: IdempotencyKey, tx: TransactionId, amount: Currency },
+    Released { version: Version, key: IdempotencyKey, tx: TransactionId, amount: Currency },
+    Reversed { version: Version, key: IdempotencyKey, tx: TransactionId, amount: Currency },
+    Locked { version: Version, key: IdempotencyKey },
 }
 
 impl Effect for Event {
     type Version = Version;
     type Key = IdempotencyKey;
-    fn version(&self) -> Self::Version { 1 }
+    fn version(&self) -> Self::Version {
+        match self {
+            Event::Credited {version, ..} |
+            Event::Debited {version, ..} |
+            Event::Held {version, ..} |
+            Event::Released {version, ..} |
+            Event::Reversed {version, ..} |
+            Event::Locked {version, ..} => { *version }
+        }
+    }
     fn idempotency_key(&self) -> Self::Key {
         match self {
             Event::Credited {key, ..} |
@@ -166,7 +175,11 @@ impl Actor<Command, Event> for Account {
                 if amount.is_none() {
                     bail!("amount is none for deposit account({}) transaction({})", command.client, command.tx);
                 }
-                let event = Event::Credited {key, tx: command.tx, amount: amount.unwrap()};
+                let event = Event::Credited {
+                    version: 1,
+                    key,
+                    tx: command.tx, amount: amount.unwrap()
+                };
                 if self.has_event(&event) {
                     bail!("duplicate deposit account({}) transaction({})", command.client, command.tx);
                 }
@@ -178,7 +191,11 @@ impl Actor<Command, Event> for Account {
                     bail!("amount is none for withdraw account({}) transaction({})", command.client, command.tx);
                 }
                 let amount_value = amount.unwrap();
-                let event = Event::Debited {key, tx: command.tx, amount: amount_value};
+                let event = Event::Debited {
+                    version: 1,
+                    key,
+                    tx: command.tx, amount: amount_value
+                };
                 if self.has_event(&event) {
                     bail!("duplicate withdraw account({}) transaction({})", command.client, command.tx);
                 }
@@ -192,7 +209,11 @@ impl Actor<Command, Event> for Account {
                 if amount.is_none() {
                     bail!("unable to find account({}) transaction({}) to dispute", command.client, command.tx);
                 }
-                let event = Event::Held {key, tx: command.tx, amount: amount.unwrap()};
+                let event = Event::Held {
+                    version: 1,
+                    key,
+                    tx: command.tx, amount: amount.unwrap()
+                };
                 if self.has_event(&event) {
                     bail!("duplicate dispute account({}) transaction({})", command.client, command.tx);
                 }
@@ -203,7 +224,11 @@ impl Actor<Command, Event> for Account {
                 if amount.is_none() {
                     bail!("unable to find disputed account({}) transaction({}) to resolve", command.client, command.tx);
                 }
-                let event = Event::Released {key, tx: command.tx, amount: amount.unwrap()};
+                let event = Event::Released {
+                    version: 1,
+                    key,
+                    tx: command.tx, amount: amount.unwrap()
+                };
                 if self.has_event(&event) {
                     bail!("duplicate resolve account({}) transaction({})", command.client, command.tx);
                 }
@@ -214,11 +239,15 @@ impl Actor<Command, Event> for Account {
                 if amount.is_none() {
                     bail!("unable to find disputed account({}) transaction({}) to chargeback", command.client, command.tx);
                 }
-                let event = Event::Reversed {key, tx: command.tx, amount: amount.unwrap()};
+                let event = Event::Reversed {
+                    version: 1,
+                    key,
+                    tx: command.tx, amount: amount.unwrap()
+                };
                 if self.has_event(&event) {
                     bail!("duplicate chargeback account({}) transaction({})", command.client, command.tx);
                 }
-                vec![event, Event::Locked {key: *Uuid::new_v4().as_bytes()}]
+                vec![event, Event::Locked {version: 1, key: *Uuid::new_v4().as_bytes()}]
             }
         };
 
@@ -226,26 +255,27 @@ impl Actor<Command, Event> for Account {
     }
 
     fn apply(&mut self, events: Vec<Event>) {
+        let _v: u32 = 1;
         for event in events {
             match event {
-                Event::Credited { amount, .. } => {
+                Event::Credited { version: _v, amount, .. } => {
                     self.available += amount;
                 }
-                Event::Debited { amount, .. } => {
+                Event::Debited { version: _v, amount, .. } => {
                     self.available -= amount;
                 }
-                Event::Held { amount, .. } => {
+                Event::Held { version: _v, amount, .. } => {
                     self.available -= amount;
                     self.held += amount;
                 }
-                Event::Released { amount, .. } => {
+                Event::Released { version: _v, amount, .. } => {
                     self.held -= amount;
                     self.available += amount;
                 }
-                Event::Reversed { amount, .. } => {
+                Event::Reversed { version: _v, amount, .. } => {
                     self.held -= amount;
                 }
-                Event::Locked { .. } => {
+                Event::Locked { version: _v, .. } => {
                     self.locked = true;
                 }
             };
